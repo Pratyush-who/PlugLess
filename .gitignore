@@ -1,5 +1,9 @@
 HELP.md
 target/
+
+### Secrets - never commit ###
+src/main/resources/application-local.yaml
+
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

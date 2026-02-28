@@ -1,3 +1,19 @@
 spring:
   application:
     name: PlugLess
+  profiles:
+    active: local
+  data:
+    mongodb:
+      auto-index-creation: true
+
+security:
+  jwt:
+    expiration-ms: 86400000
+
+logging:
+  level:
+    root: INFO
+    com.example.PlugLess: DEBUG
+    org.mongodb.driver: DEBUG
+    org.springframework.data.mongodb: DEBUG

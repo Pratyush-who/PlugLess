@@ -1,0 +1,9 @@
+
+spring:
+  data:
+    mongodb:
+      uri: "idhar daalo url"
+
+security:
+  jwt:
+    secret: "bna lo ek ranodm keyyy..."
