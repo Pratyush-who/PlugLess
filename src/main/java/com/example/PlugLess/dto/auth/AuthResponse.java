@@ -1,30 +1,14 @@
 package com.example.PlugLess.dto.auth;
 
 import com.example.PlugLess.dto.user.UserResponse;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
+@AllArgsConstructor
 public class AuthResponse {
     private String token;
     private UserResponse user;
-
-    public AuthResponse(String token, UserResponse user) {
-        this.token = token;
-        this.user = user;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    public UserResponse getUser() {
-        return user;
-    }
-
-    public void setUser(UserResponse user) {
-        this.user = user;
-    }
 }
-
