@@ -41,6 +41,7 @@ public class User {
 
     private String bio;
     private String status;
+    private String profileImageUrl;
     private Instant lastSeen;
 
     private List<String> friendIds = new ArrayList<>();
