@@ -24,4 +24,9 @@ public class AuthSignupRequest {
     @NotBlank
     @Size(min = 8, max = 72)
     private String password;
+
+    @Size(max = 200)
+    private String bio;
+
+    private String profileImageUrl;
 }

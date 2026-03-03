@@ -14,11 +14,9 @@ import java.util.Map;
 public class CloudinaryService {
 
     private final Cloudinary cloudinary;
-
     public CloudinaryService(Cloudinary cloudinary) {
         this.cloudinary = cloudinary;
     }
-
     public String uploadProfileImage(MultipartFile file, String userId) {
         try {
             Map<?, ?> result = cloudinary.uploader().upload(

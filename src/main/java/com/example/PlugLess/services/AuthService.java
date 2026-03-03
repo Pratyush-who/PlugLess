@@ -3,6 +3,7 @@ package com.example.PlugLess.services;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.PlugLess.dto.auth.AuthLoginRequest;
@@ -19,16 +20,18 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final UserService userService;
+    private final CloudinaryService cloudinaryService;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-                       UserService userService) {
+                       UserService userService, CloudinaryService cloudinaryService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.userService = userService;
+        this.cloudinaryService = cloudinaryService;
     }
 
-    public AuthResponse signup(AuthSignupRequest request) {
+    public AuthResponse signup(AuthSignupRequest request, MultipartFile photo) {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
         }
@@ -38,7 +41,16 @@ public class AuthService {
 
         User user = new User(request.getEmail(), request.getUserName(), request.getDisplayName());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        if (request.getBio() != null) user.setBio(request.getBio());
+        if (request.getProfileImageUrl() != null) user.setProfileImageUrl(request.getProfileImageUrl());
         User saved = userRepository.save(user);
+
+        // upload photo file if provided (form-data)
+        if (photo != null && !photo.isEmpty()) {
+            String imageUrl = cloudinaryService.uploadProfileImage(photo, saved.getId());
+            saved.setProfileImageUrl(imageUrl);
+            saved = userRepository.save(saved);
+        }
 
         String token = jwtService.generateToken(saved.getEmail());
         UserResponse response = userService.toResponse(saved);

@@ -14,4 +14,5 @@ public class UserUpdateRequest {
     private Instant lastSeen;
     private List<String> friendIds;
     private List<String> friendRequestIds;
+    private String profileImageUrl;
 }
