@@ -43,6 +43,7 @@ public class User {
     private String status;
     private String profileImageUrl;
     private Instant lastSeen;
+    private boolean isOnline = false;
 
     private List<String> friendIds = new ArrayList<>();
     private List<String> friendRequestIds = new ArrayList<>();

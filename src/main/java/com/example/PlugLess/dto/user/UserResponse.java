@@ -16,6 +16,7 @@ public class UserResponse {
     private String status;
     private String profileImageUrl;
     private Instant lastSeen;
+    private boolean isOnline;
     private List<String> friendIds;
     private List<String> friendRequestIds;
     private Instant createdAt;

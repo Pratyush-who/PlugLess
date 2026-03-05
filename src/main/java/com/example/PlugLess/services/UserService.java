@@ -34,6 +34,7 @@ public class UserService {
         response.setStatus(user.getStatus());
         response.setProfileImageUrl(user.getProfileImageUrl());
         response.setLastSeen(user.getLastSeen());
+        response.setOnline(user.isOnline());
         response.setFriendIds(user.getFriendIds());
         response.setFriendRequestIds(user.getFriendRequestIds());
         response.setCreatedAt(user.getCreatedAt());
@@ -110,6 +111,27 @@ public class UserService {
         if (update.getFriendRequestIds() != null) existing.setFriendRequestIds(update.getFriendRequestIds());
 
         return toResponse(userRepository.save(existing));
+    }
+
+    // Update only user-facing editable fields (safe for /users/me PUT)
+    public UserResponse updateMyProfile(String email, UserUpdateRequest update) {
+        User existing = userRepository.findByEmail(email)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+
+        if (update.getDisplayName() != null) existing.setDisplayName(update.getDisplayName());
+        if (update.getBio() != null) existing.setBio(update.getBio());
+        if (update.getStatus() != null) existing.setStatus(update.getStatus());
+        if (update.getProfileImageUrl() != null) existing.setProfileImageUrl(update.getProfileImageUrl());
+        // Note: friendIds and friendRequestIds are NOT editable here — managed by FriendService
+
+        return toResponse(userRepository.save(existing));
+    }
+
+    // Delete only the currently authenticated user's own account
+    public void deleteMyAccount(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        userRepository.delete(user);
     }
 
     public void delete(String id) {
