@@ -70,7 +70,6 @@ public class UserController {
     public List<UserResponse> getAll() {
         return userService.getAll();
     }
-    /** GET /users/{id} — view any user's profile by ID */
     @GetMapping("/{id}")
     public UserResponse getById(@PathVariable String id) {
         return userService.getById(id);
