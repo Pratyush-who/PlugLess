@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.PlugLess.dto.user.PublicProfileResponse;
 import com.example.PlugLess.dto.user.UserResponse;
 import com.example.PlugLess.dto.user.UserUpdateRequest;
 import com.example.PlugLess.services.PresenceService;
@@ -70,9 +71,18 @@ public class UserController {
     public List<UserResponse> getAll() {
         return userService.getAll();
     }
-    @GetMapping("/{id}")
-    public UserResponse getById(@PathVariable String id) {
-        return userService.getById(id);
+    @GetMapping("/{idOrUserName}")
+    public PublicProfileResponse getById(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String idOrUserName
+    ) {
+        return userService.getPublicProfile(userDetails.getUsername(), idOrUserName);
+    }
+
+    // Backward-compatible endpoint used by older clients.
+    @GetMapping("/profile/{idOrUserName}")
+    public PublicProfileResponse getPublicProfileByUserName(@PathVariable String idOrUserName) {
+        return userService.getPublicProfile(idOrUserName);
     }
 
     // ─── Presence / Online Status ────────────────────────────────────────────
@@ -89,4 +99,3 @@ public class UserController {
         return presenceService.getOnlineStats();
     }
 }
-

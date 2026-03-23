@@ -13,6 +13,7 @@ import com.example.PlugLess.dto.user.UserResponse;
 import com.example.PlugLess.dto.user.UserUpdateRequest;
 import com.example.PlugLess.entity.User;
 import com.example.PlugLess.repository.UserRepository;
+import com.example.PlugLess.dto.user.FriendshipStatus;
 
 @Service
 public class UserService {
@@ -50,6 +51,8 @@ public class UserService {
         response.setStatus(user.getStatus());
         response.setProfileImageUrl(user.getProfileImageUrl());
         response.setFriendCount(user.getFriendIds() != null ? user.getFriendIds().size() : 0);
+        response.setOnline(user.isOnline());
+        response.setLastSeen(user.getLastSeen());
         return response;
     }
 
@@ -60,10 +63,9 @@ public class UserService {
         return toResponse(user);
     }
 
-    // Get public profile by username
-    public PublicProfileResponse getPublicProfile(String userName) {
-        User user = userRepository.findByUserName(userName)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    // Get public profile by id or username
+    public PublicProfileResponse getPublicProfile(String idOrUserName) {
+        User user = resolveUserByIdOrUserName(idOrUserName);
         return toPublicProfile(user);
     }
 
@@ -146,4 +148,40 @@ public class UserService {
         return userRepository.findById(id)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
     }
+
+    private User getByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    public PublicProfileResponse getPublicProfile(String myEmail, String targetIdOrUserName) {
+        User me = getByEmail(myEmail);
+        User target = resolveUserByIdOrUserName(targetIdOrUserName);
+        String targetId = target.getId();
+        List<String> myFriendIds = me.getFriendIds() == null ? List.of() : me.getFriendIds();
+        List<String> myRequestIds = me.getFriendRequestIds() == null ? List.of() : me.getFriendRequestIds();
+        List<String> theirRequestIds = target.getFriendRequestIds() == null ? List.of() : target.getFriendRequestIds();
+
+        FriendshipStatus status;
+        if (me.getId().equals(targetId)) {
+            status = FriendshipStatus.MYSELF;
+        } else if (myFriendIds.contains(targetId)) {
+            status = FriendshipStatus.FRIENDS;
+        } else if (myRequestIds.contains(targetId)) {
+            status = FriendshipStatus.THEY_SENT_REQUEST;
+        } else if (theirRequestIds.contains(me.getId())) {
+            status = FriendshipStatus.I_SENT_REQUEST;
+        } else {
+            status = FriendshipStatus.NONE;
+        }
+
+        return PublicProfileResponse.from(target, status);
+    }
+
+    private User resolveUserByIdOrUserName(String idOrUserName) {
+        return userRepository.findById(idOrUserName)
+            .or(() -> userRepository.findByUserName(idOrUserName))
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
 }

@@ -57,13 +57,13 @@ public class FriendService {
         if (senderFriendIds.contains(targetId))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Already friends");
 
-        // target already sent a request to sender; user must accept/reject that incoming request
-        if (senderRequestIds.contains(targetId))
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "User already sent you a request. Accept or reject it.");
-
         // I already sent them a request — don't duplicate
         if (targetRequestIds.contains(sender.getId()))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Friend request already sent");
+
+        // target already sent a request to sender; user must accept/reject that incoming request
+        if (senderRequestIds.contains(targetId))
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User already sent you a request. Accept or reject it.");
 
         // normal case — add sender's ID to target's incoming requests
         targetRequestIds.add(sender.getId());

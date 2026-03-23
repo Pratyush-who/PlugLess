@@ -36,8 +36,11 @@ public class GlobalChatController {
             @Payload GlobalMessageRequest request,
             SimpMessageHeaderAccessor headerAccessor) {
 
-        String email = (String) headerAccessor.getSessionAttributes().get("userEmail");
-        if (email == null) throw new IllegalStateException("Unauthenticated WebSocket message");
+        Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
+        String email = sessionAttributes == null ? null : (String) sessionAttributes.get("userEmail");
+        if (email == null) {
+            throw new IllegalStateException("Unauthenticated WebSocket message");
+        }
 
         return globalChatService.saveMessage(email, request.getContent());
     }
@@ -53,6 +56,6 @@ public class GlobalChatController {
     @GetMapping("/chat/global/stats")
     @ResponseBody
     public Map<String, Long> getStats() {
-        return presenceService.getOnlineStats();
+        return Map.of("onlineCount", presenceService.getOnlineCount());
     }
 }

@@ -50,10 +50,13 @@ public class PresenceService {
                 .collect(Collectors.toList());
     }
 
+    public long getOnlineCount() {
+        return userRepository.countByIsOnline(true);
+    }
+
     public Map<String, Long> getOnlineStats() {
-        long online = userRepository.countByIsOnline(true);
-        long total = userRepository.count();
-        return Map.of("onlineCount", online, "totalCount", total);
+        long online = getOnlineCount();
+        return Map.of("onlineCount", online);
     }
 
     private void broadcastPresence(User user) {
@@ -73,5 +76,3 @@ public class PresenceService {
         Instant lastSeen
     ) {}
 }
-
-

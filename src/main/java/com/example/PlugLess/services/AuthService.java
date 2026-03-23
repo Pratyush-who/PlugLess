@@ -21,14 +21,17 @@ public class AuthService {
     private final JwtService jwtService;
     private final UserService userService;
     private final CloudinaryService cloudinaryService;
+     private final PresenceService presenceService;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtService jwtService,
-                       UserService userService, CloudinaryService cloudinaryService) {
+                       UserService userService, CloudinaryService cloudinaryService,
+                       PresenceService presenceService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.userService = userService;
         this.cloudinaryService = cloudinaryService;
+        this.presenceService = presenceService;
     }
 
     public AuthResponse signup(AuthSignupRequest request, MultipartFile photo) {
@@ -53,6 +56,7 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(saved.getEmail());
+        presenceService.markOnline(saved.getEmail());
         UserResponse response = userService.toResponse(saved);
         return new AuthResponse(token, response);
     }
@@ -66,8 +70,8 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail());
+        presenceService.markOnline(user.getEmail());
         UserResponse response = userService.toResponse(user);
         return new AuthResponse(token, response);
     }
 }
-
