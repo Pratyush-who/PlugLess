@@ -1,7 +1,5 @@
 package com.example.PlugLess.controllers;
 
-import java.util.List;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,10 +8,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.PlugLess.dto.friend.FriendRequestResponse;
-import com.example.PlugLess.dto.user.UserResponse;
+import com.example.PlugLess.dto.friend.FriendPageResponse;
+import com.example.PlugLess.dto.friend.FriendRequestPageResponse;
 import com.example.PlugLess.services.FriendService;
 
 @RestController
@@ -59,15 +58,28 @@ public class FriendController {
     }
 
     @GetMapping
-    public List<UserResponse> getMyFriends(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return friendService.getMyFriends(userDetails.getUsername());
+    public FriendPageResponse getMyFriends(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return friendService.getMyFriends(userDetails.getUsername(), page, size);
     }
 
     @GetMapping("/requests")
-    public List<FriendRequestResponse> getIncomingRequests(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        return friendService.getIncomingRequests(userDetails.getUsername());
+    public FriendRequestPageResponse getIncomingRequests(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return friendService.getIncomingRequests(userDetails.getUsername(), page, size);
+    }
+
+    // Alias kept for frontend clarity.
+    @GetMapping("/requests/incoming")
+    public FriendRequestPageResponse getIncomingRequestsV2(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return friendService.getIncomingRequests(userDetails.getUsername(), page, size);
     }
 }
 

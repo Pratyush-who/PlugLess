@@ -93,8 +93,7 @@ public class UserService {
         if (update.getBio() != null) existing.setBio(update.getBio());
         if (update.getStatus() != null) existing.setStatus(update.getStatus());
         if (update.getLastSeen() != null) existing.setLastSeen(update.getLastSeen());
-        if (update.getFriendIds() != null) existing.setFriendIds(update.getFriendIds());
-        if (update.getFriendRequestIds() != null) existing.setFriendRequestIds(update.getFriendRequestIds());
+        // friendIds and friendRequestIds are managed by FriendService only
 
         return toResponse(userRepository.save(existing));
     }
@@ -107,8 +106,7 @@ public class UserService {
         if (update.getBio() != null) existing.setBio(update.getBio());
         if (update.getStatus() != null) existing.setStatus(update.getStatus());
         if (update.getLastSeen() != null) existing.setLastSeen(update.getLastSeen());
-        if (update.getFriendIds() != null) existing.setFriendIds(update.getFriendIds());
-        if (update.getFriendRequestIds() != null) existing.setFriendRequestIds(update.getFriendRequestIds());
+        // friendIds and friendRequestIds are managed by FriendService only
 
         return toResponse(userRepository.save(existing));
     }
