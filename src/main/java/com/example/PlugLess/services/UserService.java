@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.PlugLess.dto.user.PublicProfileResponse;
+import com.example.PlugLess.dto.user.RelationshipAction;
 import com.example.PlugLess.dto.user.UserResponse;
 import com.example.PlugLess.dto.user.UserUpdateRequest;
 import com.example.PlugLess.entity.User;
@@ -51,6 +52,8 @@ public class UserService {
         response.setStatus(user.getStatus());
         response.setProfileImageUrl(user.getProfileImageUrl());
         response.setFriendCount(user.getFriendIds() != null ? user.getFriendIds().size() : 0);
+        response.setFriendshipStatus(FriendshipStatus.NONE);
+        response.setAllowedActions(List.of());
         response.setOnline(user.isOnline());
         response.setLastSeen(user.getLastSeen());
         return response;
@@ -157,25 +160,47 @@ public class UserService {
     public PublicProfileResponse getPublicProfile(String myEmail, String targetIdOrUserName) {
         User me = getByEmail(myEmail);
         User target = resolveUserByIdOrUserName(targetIdOrUserName);
+        FriendshipStatus status = resolveFriendshipStatus(me, target);
+        PublicProfileResponse profile = PublicProfileResponse.from(target, status);
+        profile.setAllowedActions(resolveAllowedActions(status));
+        return profile;
+    }
+
+    private FriendshipStatus resolveFriendshipStatus(User me, User target) {
         String targetId = target.getId();
         List<String> myFriendIds = me.getFriendIds() == null ? List.of() : me.getFriendIds();
         List<String> myRequestIds = me.getFriendRequestIds() == null ? List.of() : me.getFriendRequestIds();
         List<String> theirRequestIds = target.getFriendRequestIds() == null ? List.of() : target.getFriendRequestIds();
 
-        FriendshipStatus status;
         if (me.getId().equals(targetId)) {
-            status = FriendshipStatus.MYSELF;
-        } else if (myFriendIds.contains(targetId)) {
-            status = FriendshipStatus.FRIENDS;
-        } else if (myRequestIds.contains(targetId)) {
-            status = FriendshipStatus.THEY_SENT_REQUEST;
-        } else if (theirRequestIds.contains(me.getId())) {
-            status = FriendshipStatus.I_SENT_REQUEST;
-        } else {
-            status = FriendshipStatus.NONE;
+            return FriendshipStatus.MYSELF;
         }
+        if (myFriendIds.contains(targetId)) {
+            return FriendshipStatus.FRIENDS;
+        }
+        if (myRequestIds.contains(targetId)) {
+            return FriendshipStatus.THEY_SENT_REQUEST;
+        }
+        if (theirRequestIds.contains(me.getId())) {
+            return FriendshipStatus.I_SENT_REQUEST;
+        }
+        return FriendshipStatus.NONE;
+    }
 
-        return PublicProfileResponse.from(target, status);
+    private List<RelationshipAction> resolveAllowedActions(FriendshipStatus status) {
+        switch (status) {
+            case NONE:
+                return List.of(RelationshipAction.SEND_REQUEST);
+            case I_SENT_REQUEST:
+                return List.of(RelationshipAction.CANCEL_REQUEST);
+            case THEY_SENT_REQUEST:
+                return List.of(RelationshipAction.ACCEPT_REQUEST, RelationshipAction.REJECT_REQUEST);
+            case FRIENDS:
+                return List.of(RelationshipAction.REMOVE_FRIEND);
+            case MYSELF:
+            default:
+                return List.of();
+        }
     }
 
     private User resolveUserByIdOrUserName(String idOrUserName) {

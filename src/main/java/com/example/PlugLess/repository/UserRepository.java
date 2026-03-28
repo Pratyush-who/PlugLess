@@ -14,4 +14,7 @@ public interface UserRepository extends MongoRepository<User, String> {
     List<User> findAllByIsOnline(boolean isOnline);
     long countByIsOnline(boolean isOnline);
     List<User> findAllByIdIn(List<String> ids);
+    List<User> findAllByUserNameIn(List<String> userNames);
+    List<User> findAllByEmailIn(List<String> emails);
+    List<User> findAllByFriendRequestIdsContaining(String requesterId);
 }

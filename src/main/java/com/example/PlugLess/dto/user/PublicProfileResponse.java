@@ -4,6 +4,7 @@ import com.example.PlugLess.entity.User;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.time.Instant;
+import java.util.List;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PublicProfileResponse {
@@ -15,6 +16,7 @@ public class PublicProfileResponse {
     private String profileImageUrl;
     private Integer friendCount;
     private FriendshipStatus friendshipStatus;
+    private List<RelationshipAction> allowedActions;
     private Boolean isOnline;
     private Instant lastSeen;
 
@@ -95,6 +97,14 @@ public class PublicProfileResponse {
 
     public void setFriendshipStatus(FriendshipStatus friendshipStatus) {
         this.friendshipStatus = friendshipStatus;
+    }
+
+    public List<RelationshipAction> getAllowedActions() {
+        return allowedActions;
+    }
+
+    public void setAllowedActions(List<RelationshipAction> allowedActions) {
+        this.allowedActions = allowedActions;
     }
 
     public Boolean getOnline() {

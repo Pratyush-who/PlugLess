@@ -81,7 +81,12 @@ public class UserController {
 
     // Backward-compatible endpoint used by older clients.
     @GetMapping("/profile/{idOrUserName}")
-    public PublicProfileResponse getPublicProfileByUserName(@PathVariable String idOrUserName) {
+    public PublicProfileResponse getPublicProfileByUserName(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String idOrUserName) {
+        if (userDetails != null) {
+            return userService.getPublicProfile(userDetails.getUsername(), idOrUserName);
+        }
         return userService.getPublicProfile(idOrUserName);
     }
 

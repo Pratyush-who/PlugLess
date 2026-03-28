@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.PlugLess.dto.friend.FriendPageResponse;
 import com.example.PlugLess.dto.friend.FriendRequestPageResponse;
+import com.example.PlugLess.dto.friend.SentFriendRequestPageResponse;
 import com.example.PlugLess.services.FriendService;
 
 @RestController
@@ -33,6 +34,14 @@ public class FriendController {
         return ResponseEntity.ok().build();
     }
 
+    @DeleteMapping("/request/{targetId}")
+    public ResponseEntity<Void> cancelOutgoingRequest(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String targetId) {
+        friendService.cancelOutgoingRequest(userDetails.getUsername(), targetId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/accept/{requesterId}")
     public ResponseEntity<Void> acceptRequest(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -41,8 +50,24 @@ public class FriendController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/requests/{requesterId}/accept")
+    public ResponseEntity<Void> acceptRequestV2(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String requesterId) {
+        friendService.acceptRequest(userDetails.getUsername(), requesterId);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/reject/{requesterId}")
     public ResponseEntity<Void> rejectRequest(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable String requesterId) {
+        friendService.rejectRequest(userDetails.getUsername(), requesterId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/requests/{requesterId}/reject")
+    public ResponseEntity<Void> rejectRequestV2(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String requesterId) {
         friendService.rejectRequest(userDetails.getUsername(), requesterId);
@@ -65,6 +90,14 @@ public class FriendController {
         return friendService.getMyFriends(userDetails.getUsername(), page, size);
     }
 
+    @GetMapping("/list")
+    public FriendPageResponse getMyFriendsV2(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return friendService.getMyFriends(userDetails.getUsername(), page, size);
+    }
+
     @GetMapping("/requests")
     public FriendRequestPageResponse getIncomingRequests(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -80,6 +113,22 @@ public class FriendController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         return friendService.getIncomingRequests(userDetails.getUsername(), page, size);
+    }
+
+    @GetMapping("/requests/received")
+    public FriendRequestPageResponse getReceivedRequests(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return friendService.getIncomingRequests(userDetails.getUsername(), page, size);
+    }
+
+    @GetMapping("/requests/sent")
+    public SentFriendRequestPageResponse getSentRequests(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return friendService.getSentRequests(userDetails.getUsername(), page, size);
     }
 }
 
