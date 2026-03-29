@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.messaging.simp.annotation.SendToUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,7 +19,10 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.example.PlugLess.dto.chat.GlobalMessageRequest;
 import com.example.PlugLess.dto.chat.GlobalMessageResponse;
 import com.example.PlugLess.services.GlobalChatService;
+import com.example.PlugLess.services.GlobalChatModerationException;
 import com.example.PlugLess.services.PresenceService;
+
+import jakarta.validation.Valid;
 
 @Controller
 public class GlobalChatController {
@@ -33,7 +38,7 @@ public class GlobalChatController {
     @MessageMapping("/chat.global")
     @SendTo("/topic/global")
     public GlobalMessageResponse sendMessage(
-            @Payload GlobalMessageRequest request,
+            @Valid @Payload GlobalMessageRequest request,
             SimpMessageHeaderAccessor headerAccessor) {
 
         Map<String, Object> sessionAttributes = headerAccessor.getSessionAttributes();
@@ -43,6 +48,12 @@ public class GlobalChatController {
         }
 
         return globalChatService.saveMessage(email, request.getContent());
+    }
+
+    @MessageExceptionHandler(GlobalChatModerationException.class)
+    @SendToUser("/queue/errors")
+    public Map<String, String> handleModerationException(GlobalChatModerationException ex) {
+        return Map.of("message", ex.getMessage());
     }
 
     @GetMapping("/chat/global/history")

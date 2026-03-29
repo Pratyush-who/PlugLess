@@ -3,6 +3,7 @@ package com.example.PlugLess.services;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,12 +19,15 @@ public class PresenceService {
     private final UserRepository userRepository;
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
+    private final PresenceTrackerService presenceTrackerService;
 
     public PresenceService(UserRepository userRepository, SimpMessagingTemplate messagingTemplate,
-                           UserService userService) {
+                           UserService userService,
+                           PresenceTrackerService presenceTrackerService) {
         this.userRepository = userRepository;
         this.messagingTemplate = messagingTemplate;
         this.userService = userService;
+        this.presenceTrackerService = presenceTrackerService;
     }
 
     public void markOnline(String email) {
@@ -44,14 +48,19 @@ public class PresenceService {
     }
 
     public List<UserResponse> getOnlineUsers() {
-        return userRepository.findAllByIsOnline(true)
+        Set<String> onlineEmails = presenceTrackerService.getOnlineEmails();
+        if (onlineEmails.isEmpty()) {
+            return List.of();
+        }
+
+        return userRepository.findAllByEmailIn(List.copyOf(onlineEmails))
                 .stream()
                 .map(userService::toResponse)
                 .collect(Collectors.toList());
     }
 
     public long getOnlineCount() {
-        return userRepository.countByIsOnline(true);
+        return presenceTrackerService.getOnlineCount();
     }
 
     public Map<String, Long> getOnlineStats() {

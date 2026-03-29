@@ -1,8 +1,5 @@
 package com.example.PlugLess.websocket;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -12,19 +9,19 @@ import org.springframework.web.socket.messaging.SessionConnectEvent;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import com.example.PlugLess.services.PresenceService;
+import com.example.PlugLess.services.PresenceTrackerService;
 
 @Component
 public class WebSocketEventListener {
 
     private static final Logger log = LoggerFactory.getLogger(WebSocketEventListener.class);
 
-    private final ConcurrentHashMap<String, String> sessionEmailMap = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<String, AtomicInteger> emailSessionCounts = new ConcurrentHashMap<>();
-
     private final PresenceService presenceService;
+    private final PresenceTrackerService presenceTrackerService;
 
-    public WebSocketEventListener(PresenceService presenceService) {
+    public WebSocketEventListener(PresenceService presenceService, PresenceTrackerService presenceTrackerService) {
         this.presenceService = presenceService;
+        this.presenceTrackerService = presenceTrackerService;
     }
 
     @EventListener
@@ -36,10 +33,7 @@ public class WebSocketEventListener {
                 : null;
 
         if (sessionId != null && email instanceof String emailStr) {
-            sessionEmailMap.put(sessionId, emailStr);
-            int activeSessions = emailSessionCounts
-                    .computeIfAbsent(emailStr, k -> new AtomicInteger(0))
-                    .incrementAndGet();
+            int activeSessions = presenceTrackerService.registerSession(sessionId, emailStr);
 
             log.debug("WebSocket CONNECT: {} (session={}, activeSessions={})", emailStr, sessionId, activeSessions);
             presenceService.markOnline(emailStr);
@@ -49,14 +43,13 @@ public class WebSocketEventListener {
     @EventListener
     public void handleSessionDisconnect(SessionDisconnectEvent event) {
         String sessionId = event.getSessionId();
-        String email = sessionEmailMap.remove(sessionId);
+        PresenceTrackerService.SessionCloseResult closeResult = presenceTrackerService.unregisterSession(sessionId);
+        String email = closeResult.email();
 
         if (email != null) {
-            AtomicInteger counter = emailSessionCounts.get(email);
-            int activeSessions = counter == null ? 0 : counter.decrementAndGet();
+            int activeSessions = closeResult.activeSessions();
 
             if (activeSessions <= 0) {
-                emailSessionCounts.remove(email);
                 presenceService.markOffline(email);
             }
 

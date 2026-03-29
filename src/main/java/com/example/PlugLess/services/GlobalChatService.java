@@ -21,23 +21,29 @@ public class GlobalChatService {
 
     private final GlobalMessageRepository globalMessageRepository;
     private final UserRepository userRepository;
+    private final ChatModerationService chatModerationService;
 
     public GlobalChatService(GlobalMessageRepository globalMessageRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             ChatModerationService chatModerationService) {
         this.globalMessageRepository = globalMessageRepository;
         this.userRepository = userRepository;
+        this.chatModerationService = chatModerationService;
     }
 
     public GlobalMessageResponse saveMessage(String senderEmail, String content) {
         User sender = userRepository.findByEmail(senderEmail)
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
+        chatModerationService.validateGlobalMessage(content);
+        String cleanedContent = content == null ? "" : content.trim();
+
         GlobalMessage msg = new GlobalMessage();
         msg.setSenderId(sender.getId());
         msg.setSenderUserName(sender.getUserName());
         msg.setSenderDisplayName(sender.getDisplayName());
         msg.setSenderAvatar(sender.getProfileImageUrl());
-        msg.setContent(content.trim());
+        msg.setContent(cleanedContent);
         msg.setTimestamp(Instant.now());
 
         GlobalMessage saved = globalMessageRepository.save(msg);

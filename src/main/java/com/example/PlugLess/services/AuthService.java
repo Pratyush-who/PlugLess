@@ -56,7 +56,6 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(saved.getEmail());
-        presenceService.markOnline(saved.getEmail());
         UserResponse response = userService.toResponse(saved);
         return new AuthResponse(token, response);
     }
@@ -70,8 +69,11 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail());
-        presenceService.markOnline(user.getEmail());
         UserResponse response = userService.toResponse(user);
         return new AuthResponse(token, response);
+    }
+
+    public void logout(String email) {
+        presenceService.markOffline(email);
     }
 }

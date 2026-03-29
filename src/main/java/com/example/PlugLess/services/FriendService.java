@@ -30,10 +30,13 @@ public class FriendService {
 
     private final UserRepository userRepository;
     private final UserService userService;
+    private final PresenceTrackerService presenceTrackerService;
 
-    public FriendService(UserRepository userRepository, UserService userService) {
+    public FriendService(UserRepository userRepository, UserService userService,
+                         PresenceTrackerService presenceTrackerService) {
         this.userRepository = userRepository;
         this.userService = userService;
+        this.presenceTrackerService = presenceTrackerService;
     }
 
     private User getByEmail(String email) {
@@ -264,7 +267,7 @@ public class FriendService {
             u.getUserName(),
             u.getDisplayName(),
             u.getProfileImageUrl(),
-            u.isOnline(),
+            presenceTrackerService.isUserOnline(u.getEmail()),
             u.getLastSeen()
         );
     }
@@ -275,7 +278,7 @@ public class FriendService {
             u.getUserName(),
             u.getDisplayName(),
             u.getProfileImageUrl(),
-            u.isOnline(),
+            presenceTrackerService.isUserOnline(u.getEmail()),
             u.getLastSeen()
         );
     }

@@ -3,6 +3,7 @@ target/
 
 ### Secrets - never commit ###
 src/main/resources/application-local.yaml
+src/main/resources/moderation/blocked-words.txt
 
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

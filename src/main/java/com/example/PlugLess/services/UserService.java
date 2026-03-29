@@ -20,10 +20,13 @@ import com.example.PlugLess.dto.user.FriendshipStatus;
 public class UserService {
     private final UserRepository userRepository;
     private final CloudinaryService cloudinaryService;
+    private final PresenceTrackerService presenceTrackerService;
 
-    public UserService(UserRepository userRepository, CloudinaryService cloudinaryService) {
+    public UserService(UserRepository userRepository, CloudinaryService cloudinaryService,
+                       PresenceTrackerService presenceTrackerService) {
         this.userRepository = userRepository;
         this.cloudinaryService = cloudinaryService;
+        this.presenceTrackerService = presenceTrackerService;
     }
 
     public UserResponse toResponse(User user) {
@@ -36,7 +39,7 @@ public class UserService {
         response.setStatus(user.getStatus());
         response.setProfileImageUrl(user.getProfileImageUrl());
         response.setLastSeen(user.getLastSeen());
-        response.setOnline(user.isOnline());
+        response.setOnline(isOnline(user));
         response.setFriendIds(user.getFriendIds());
         response.setFriendRequestIds(user.getFriendRequestIds());
         response.setCreatedAt(user.getCreatedAt());
@@ -54,7 +57,7 @@ public class UserService {
         response.setFriendCount(user.getFriendIds() != null ? user.getFriendIds().size() : 0);
         response.setFriendshipStatus(FriendshipStatus.NONE);
         response.setAllowedActions(List.of());
-        response.setOnline(user.isOnline());
+        response.setOnline(isOnline(user));
         response.setLastSeen(user.getLastSeen());
         return response;
     }
@@ -207,6 +210,10 @@ public class UserService {
         return userRepository.findById(idOrUserName)
             .or(() -> userRepository.findByUserName(idOrUserName))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
+    private boolean isOnline(User user) {
+        return presenceTrackerService.isUserOnline(user.getEmail());
     }
 
 }

@@ -1,0 +1,3 @@
+# One blocked word per line (case-insensitive)
+# Keep this list clean in source control.
+likhte jao...
