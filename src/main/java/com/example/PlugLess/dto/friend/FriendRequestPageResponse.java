@@ -2,18 +2,28 @@ package com.example.PlugLess.dto.friend;
 
 import java.util.List;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
-@AllArgsConstructor
 public class FriendRequestPageResponse {
     private final List<FriendRequestResponse> requests;
+    private final List<FriendRequestResponse> content;
     private final int page;
     private final int size;
     private final long totalElements;
     private final int totalPages;
     private final boolean hasNext;
+
+    public FriendRequestPageResponse(List<FriendRequestResponse> requests, int page, int size,
+                                     long totalElements, int totalPages, boolean hasNext) {
+        this.requests = requests;
+        this.content = requests;
+        this.page = page;
+        this.size = size;
+        this.totalElements = totalElements;
+        this.totalPages = totalPages;
+        this.hasNext = hasNext;
+    }
 
     public static FriendRequestPageResponse of(List<FriendRequestResponse> requests, int page, int size, long totalElements) {
         int totalPages = totalElements == 0 ? 0 : (int) Math.ceil((double) totalElements / size);

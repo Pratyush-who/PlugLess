@@ -3,6 +3,7 @@ package com.example.PlugLess.controllers;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -10,8 +11,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import com.example.PlugLess.dto.friend.FriendPageResponse;
+import com.example.PlugLess.dto.friend.FriendRequestActionRequest;
 import com.example.PlugLess.dto.friend.FriendRequestPageResponse;
 import com.example.PlugLess.dto.friend.SentFriendRequestPageResponse;
 import com.example.PlugLess.services.FriendService;
@@ -58,6 +62,20 @@ public class FriendController {
         return ResponseEntity.ok().build();
     }
 
+    // Compatibility endpoint for clients that call /friends/requests/accept
+    @PostMapping("/requests/accept")
+    public ResponseEntity<Void> acceptRequestCompat(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(value = "requesterId", required = false) String requesterId,
+            @RequestBody(required = false) FriendRequestActionRequest request) {
+        String resolvedRequesterId = requesterId != null ? requesterId : (request != null ? request.getRequesterId() : null);
+        if (resolvedRequesterId == null || resolvedRequesterId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "requesterId is required");
+        }
+        friendService.acceptRequest(userDetails.getUsername(), resolvedRequesterId);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/reject/{requesterId}")
     public ResponseEntity<Void> rejectRequest(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -71,6 +89,20 @@ public class FriendController {
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable String requesterId) {
         friendService.rejectRequest(userDetails.getUsername(), requesterId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Compatibility endpoint for clients that call /friends/requests/reject
+    @PostMapping("/requests/reject")
+    public ResponseEntity<Void> rejectRequestCompat(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(value = "requesterId", required = false) String requesterId,
+            @RequestBody(required = false) FriendRequestActionRequest request) {
+        String resolvedRequesterId = requesterId != null ? requesterId : (request != null ? request.getRequesterId() : null);
+        if (resolvedRequesterId == null || resolvedRequesterId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "requesterId is required");
+        }
+        friendService.rejectRequest(userDetails.getUsername(), resolvedRequesterId);
         return ResponseEntity.ok().build();
     }
 
