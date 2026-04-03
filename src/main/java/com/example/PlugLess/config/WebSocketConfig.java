@@ -2,6 +2,8 @@ package com.example.PlugLess.config;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.security.Principal;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.server.ServerHttpRequest;
@@ -12,6 +14,7 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 import org.springframework.web.socket.server.HandshakeInterceptor;
+import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 import com.example.PlugLess.security.JwtService;
 
@@ -37,15 +40,26 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
+        DefaultHandshakeHandler handshakeHandler = new DefaultHandshakeHandler() {
+            @Override
+            protected Principal determineUser(ServerHttpRequest request, WebSocketHandler wsHandler,
+                                              Map<String, Object> attributes) {
+                String email = (String) attributes.get("userEmail");
+                return () -> email != null ? email : UUID.randomUUID().toString();
+            }
+        };
+
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
                 .addInterceptors(jwtHandshakeInterceptor())
+                .setHandshakeHandler(handshakeHandler)
                 .withSockJS();
 
         // Also register without SockJS for native STOMP clients (Flutter uses this)
         registry.addEndpoint("/ws")
                 .setAllowedOriginPatterns("*")
-                .addInterceptors(jwtHandshakeInterceptor());
+                .addInterceptors(jwtHandshakeInterceptor())
+                .setHandshakeHandler(handshakeHandler);
     }
 
     private HandshakeInterceptor jwtHandshakeInterceptor() {
