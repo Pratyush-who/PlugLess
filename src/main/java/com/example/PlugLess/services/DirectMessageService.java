@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -13,8 +14,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.PlugLess.dto.chat.dm.DirectMessageResponse;
 import com.example.PlugLess.entity.DirectMessage;
+import com.example.PlugLess.entity.PersonalDm;
 import com.example.PlugLess.entity.User;
 import com.example.PlugLess.repository.DirectMessageRepository;
+import com.example.PlugLess.repository.PersonalDmRepository;
 import com.example.PlugLess.repository.UserRepository;
 
 @Service
@@ -25,13 +28,16 @@ public class DirectMessageService {
 
     private final DirectMessageRepository directMessageRepository;
     private final UserRepository userRepository;
+    private final PersonalDmRepository personalDmRepository;
     private final SimpMessagingTemplate messagingTemplate;
 
     public DirectMessageService(DirectMessageRepository directMessageRepository,
                                 UserRepository userRepository,
+                                PersonalDmRepository personalDmRepository,
                                 SimpMessagingTemplate messagingTemplate) {
         this.directMessageRepository = directMessageRepository;
         this.userRepository = userRepository;
+        this.personalDmRepository = personalDmRepository;
         this.messagingTemplate = messagingTemplate;
     }
 
@@ -43,9 +49,12 @@ public class DirectMessageService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot send a DM to yourself");
         }
 
+        /*
+        // Disabling friend constraint for easier flutter frontend testing
         if (!areFriends(sender, recipient)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only DM friends");
         }
+        */
 
         String cleanedContent = content == null ? "" : content.trim();
         if (cleanedContent.isEmpty()) {
@@ -66,8 +75,24 @@ public class DirectMessageService {
         message.setRecipientProfileImageUrl(recipient.getProfileImageUrl());
         message.setContent(cleanedContent);
         message.setTimestamp(Instant.now());
+        message.setId(UUID.randomUUID().toString()); // Set ID manually since it might be embedded
 
         DirectMessage saved = directMessageRepository.save(message);
+
+        // Save in personal_dms as one document per DM pair
+        PersonalDm dm = personalDmRepository.findById(message.getConversationKey()).orElseGet(() -> {
+            PersonalDm newDm = new PersonalDm();
+            newDm.setId(message.getConversationKey());
+            String u1 = sender.getId().compareTo(recipient.getId()) <= 0 ? sender.getId() : recipient.getId();
+            String u2 = sender.getId().compareTo(recipient.getId()) > 0 ? sender.getId() : recipient.getId();
+            newDm.setUser1Id(u1);
+            newDm.setUser2Id(u2);
+            return newDm;
+        });
+        dm.getMessages().add(saved);
+        dm.setLastUpdated(Instant.now());
+        personalDmRepository.save(dm);
+
         DirectMessageResponse response = toResponse(saved);
 
         messagingTemplate.convertAndSendToUser(recipient.getEmail(), "/queue/dm", response);
@@ -99,9 +124,12 @@ public class DirectMessageService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot load DM history for yourself");
         }
 
+        /*
+        // Temporarily overriding friend requirements
         if (!areFriends(me, other)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You can only view DM history with friends");
         }
+        */
 
         int normalizedSize = normalizeSize(size);
         String key = conversationKey(me.getId(), other.getId());
@@ -171,4 +199,3 @@ public class DirectMessageService {
                 message.isDeleted());
     }
 }
-

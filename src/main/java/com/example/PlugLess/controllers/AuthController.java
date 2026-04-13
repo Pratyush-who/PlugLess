@@ -19,7 +19,6 @@ import com.example.PlugLess.dto.auth.AuthSignupRequest;
 import com.example.PlugLess.services.AuthService;
 
 import jakarta.validation.Valid;
-import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/auth")
@@ -52,9 +51,6 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
-        }
         authService.logout(userDetails.getUsername());
         return ResponseEntity.noContent().build();
     }

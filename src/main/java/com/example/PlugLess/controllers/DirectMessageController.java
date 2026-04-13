@@ -30,7 +30,7 @@ import com.example.PlugLess.services.DirectMessageService;
 import jakarta.validation.Valid;
 
 @Controller
-@RequestMapping("/chat/dm")
+@RequestMapping({"/chat/dm", "/messages"})
 public class DirectMessageController {
 
     private final DirectMessageService directMessageService;
@@ -77,7 +77,7 @@ public class DirectMessageController {
         return directMessageService.deleteMessage(userDetails.getUsername(), request.getMessageId());
     }
 
-    @GetMapping("/{otherUserId}/history")
+    @GetMapping({"/history/{otherUserId}", "/{otherUserId}/history"})
     @ResponseBody
     public List<DirectMessageResponse> getHistory(@AuthenticationPrincipal UserDetails userDetails,
                                                   @PathVariable String otherUserId,
