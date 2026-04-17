@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.server.ResponseStatusException;
@@ -30,7 +29,6 @@ import com.example.PlugLess.services.DirectMessageService;
 import jakarta.validation.Valid;
 
 @Controller
-@RequestMapping({"/chat/dm", "/messages"})
 public class DirectMessageController {
 
     private final DirectMessageService directMessageService;
@@ -40,26 +38,30 @@ public class DirectMessageController {
     }
 
     @MessageMapping("/chat.dm.send")
-    @SendToUser("/queue/dm")
+    @SendToUser("/queue/messages")
     public DirectMessageResponse sendMessage(@Valid @Payload DirectMessageRequest request,
                                              SimpMessageHeaderAccessor headerAccessor) {
+
         String email = sessionEmail(headerAccessor);
+
         if (email == null) {
             throw new IllegalStateException("Unauthenticated WebSocket message");
         }
 
-        return directMessageService.sendMessage(email, request.getRecipientId(), request.getContent());
+        DirectMessageResponse response = directMessageService.sendMessage(email, request.getRecipientId(), request.getContent());
+        return response;
     }
 
-    @PostMapping("/send")
+    @PostMapping({"/chat/dm/send", "/messages/send"})
     @ResponseBody
     public DirectMessageResponse sendMessageRest(@AuthenticationPrincipal UserDetails userDetails,
                                                  @Valid @RequestBody DirectMessageRequest request) {
+        System.out.println("Sender: " + userDetails.getUsername() + ", Recipient: " + request.getRecipientId());
         return directMessageService.sendMessage(userDetails.getUsername(), request.getRecipientId(), request.getContent());
     }
 
     @MessageMapping("/chat.dm.delete")
-    @SendToUser("/queue/dm.update")
+    @SendToUser("/queue/messages.update")
     public DirectMessageResponse deleteMessage(@Valid @Payload DirectMessageDeleteRequest request,
                                                SimpMessageHeaderAccessor headerAccessor) {
         String email = sessionEmail(headerAccessor);
@@ -70,14 +72,14 @@ public class DirectMessageController {
         return directMessageService.deleteMessage(email, request.getMessageId());
     }
 
-    @PostMapping("/delete")
+    @PostMapping({"/chat/dm/delete", "/messages/delete"})
     @ResponseBody
     public DirectMessageResponse deleteMessageRest(@AuthenticationPrincipal UserDetails userDetails,
                                                    @Valid @RequestBody DirectMessageDeleteRequest request) {
         return directMessageService.deleteMessage(userDetails.getUsername(), request.getMessageId());
     }
 
-    @GetMapping({"/history/{otherUserId}", "/{otherUserId}/history"})
+    @GetMapping({"/chat/dm/history/{otherUserId}", "/chat/dm/{otherUserId}/history", "/messages/history/{otherUserId}", "/messages/{otherUserId}/history"})
     @ResponseBody
     public List<DirectMessageResponse> getHistory(@AuthenticationPrincipal UserDetails userDetails,
                                                   @PathVariable String otherUserId,
@@ -88,8 +90,10 @@ public class DirectMessageController {
     }
 
     @MessageExceptionHandler({ResponseStatusException.class, IllegalStateException.class})
-    @SendToUser("/queue/dm-errors")
+    @SendToUser("/queue/messages.errors")
     public Map<String, String> handleDmError(Exception ex) {
+        System.err.println("====== WS DM ERROR HANDLER HIT ======");
+        ex.printStackTrace();
         String message = ex instanceof ResponseStatusException rse && rse.getReason() != null
                 ? rse.getReason()
                 : ex.getMessage();

@@ -42,10 +42,12 @@ public class DirectMessageService {
     }
 
     public DirectMessageResponse sendMessage(String senderEmail, String recipientId, String content) {
+        System.out.println("--- Service: sendMessage started ---");
         User sender = getUserByEmail(senderEmail);
         User recipient = getUserById(recipientId);
 
         if (sender.getId().equals(recipient.getId())) {
+            System.err.println("Cannot send DM to self");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot send a DM to yourself");
         }
 
@@ -58,6 +60,7 @@ public class DirectMessageService {
 
         String cleanedContent = content == null ? "" : content.trim();
         if (cleanedContent.isEmpty()) {
+            System.err.println("Message is empty");
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Message cannot be empty");
         }
 
@@ -87,15 +90,24 @@ public class DirectMessageService {
             String u2 = sender.getId().compareTo(recipient.getId()) > 0 ? sender.getId() : recipient.getId();
             newDm.setUser1Id(u1);
             newDm.setUser2Id(u2);
+            newDm.setMessages(new ArrayList<>());
             return newDm;
         });
+
+        if (dm.getMessages() == null) {
+            dm.setMessages(new ArrayList<>());
+        }
+
         dm.getMessages().add(saved);
         dm.setLastUpdated(Instant.now());
         personalDmRepository.save(dm);
+        System.out.println("--- Service: Message saved perfectly to DB ---");
 
         DirectMessageResponse response = toResponse(saved);
 
-        messagingTemplate.convertAndSendToUser(recipient.getEmail(), "/queue/dm", response);
+        System.out.println("--- Service: Emitting to /user/" + recipient.getEmail() + "/queue/messages ---");
+        messagingTemplate.convertAndSendToUser(recipient.getEmail(), "/queue/messages", response);
+        System.out.println("--- Service: Execution complete ---");
         return response;
     }
 
@@ -111,8 +123,8 @@ public class DirectMessageService {
         DirectMessage saved = directMessageRepository.save(message);
         DirectMessageResponse response = toResponse(saved);
 
-        messagingTemplate.convertAndSendToUser(message.getRecipientEmail(), "/queue/dm.update", response);
-        messagingTemplate.convertAndSendToUser(message.getSenderEmail(), "/queue/dm.update", response);
+        messagingTemplate.convertAndSendToUser(message.getRecipientEmail(), "/queue/messages.update", response);
+        messagingTemplate.convertAndSendToUser(message.getSenderEmail(), "/queue/messages.update", response);
         return response;
     }
 
